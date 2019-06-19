@@ -409,8 +409,14 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 		qi.IsPending = true
 
 		// in case of class-b it is already set, we don't want to overwrite it
-		if qi.TimeoutAfter == nil {
+		// we want that class-a retry confirmed down if retryConfirmed is true
+		if qi.TimeoutAfter == nil && !ctx.DeviceProfile.RetryConfirmed{
 			qi.TimeoutAfter = &timeout
+		}
+
+		if ctx.DeviceProfile.RetryConfirmed {
+			qi.RetryConfirmed = true
+			qi.RetryTime = ctx.DeviceProfile.RetryTime
 		}
 
 		if err := storage.UpdateDeviceQueueItem(config.C.PostgreSQL.DB, &qi); err != nil {

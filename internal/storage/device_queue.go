@@ -29,6 +29,9 @@ type DeviceQueueItem struct {
 	IsPending               bool           `db:"is_pending"`
 	EmitAtTimeSinceGPSEpoch *time.Duration `db:"emit_at_time_since_gps_epoch"`
 	TimeoutAfter            *time.Time     `db:"timeout_after"`
+	RetryConfirmed          bool           `db:"retry_confirmed"`
+	RetryTime               uint32         `db:"retry_time"`
+	HasRetry                uint32         `db:"has_retry"`
 }
 
 // CreateDeviceQueueItem adds the given item to the device queue.
@@ -48,7 +51,9 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
             confirmed,
             emit_at_time_since_gps_epoch,
             is_pending,
-            timeout_after
+            timeout_after,
+			retry_confirmed,
+			retry_time
         ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         returning id`,
 		qi.CreatedAt,
@@ -61,6 +66,8 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
 		qi.EmitAtTimeSinceGPSEpoch,
 		qi.IsPending,
 		qi.TimeoutAfter,
+		qi.RetryConfirmed,
+		qi.RetryTime,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -99,7 +106,10 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
             confirmed = $7,
             emit_at_time_since_gps_epoch = $8,
             is_pending = $9,
-            timeout_after = $10
+            timeout_after = $10,
+			retry_confirmed = $11,
+			retry_time = $12,
+			has_retry = $13
         where
             id = $1`,
 		qi.ID,
@@ -112,6 +122,9 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
 		qi.EmitAtTimeSinceGPSEpoch,
 		qi.IsPending,
 		qi.TimeoutAfter,
+		qi.RetryConfirmed,
+		qi.RetryTime,
+		qi.HasRetry,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")
@@ -130,6 +143,9 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
 		"is_pending":                   qi.IsPending,
 		"emit_at_time_since_gps_epoch": qi.EmitAtTimeSinceGPSEpoch,
 		"timeout_after":                qi.TimeoutAfter,
+		"retry_confirmed":              qi.RetryConfirmed,
+		"retry_time":                   qi.RetryTime,
+		"has_retry":                    qi.HasRetry,
 	}).Info("device-queue item updated")
 
 	return nil
@@ -192,10 +208,16 @@ func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (Dev
 
 	// In case the transmission is pending and hasn't timed-out yet, do not
 	// return it.
-	if qi.IsPending && qi.TimeoutAfter != nil && qi.TimeoutAfter.After(time.Now()) {
+	// but went the retryConfirmed is true we want it retransmit, because is not,
+	// this qi is timeout and will be delete in next step after be return
+	if !qi.RetryConfirmed && qi.IsPending && qi.TimeoutAfter != nil && qi.TimeoutAfter.After(time.Now()) {
 		return DeviceQueueItem{}, ErrDoesNotExist
 	}
-
+	// this qi will retry and the FCnt must be
+	if qi.RetryConfirmed {
+		qi.HasRetry++
+		qi.FCnt++
+	}
 	return qi, nil
 }
 

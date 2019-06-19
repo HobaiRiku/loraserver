@@ -54,4 +54,6 @@ message DeviceProfile {
     bool supportsJoin = 18;
     string rfRegion = 19;
     bool supports32bitFCnt = 20;
+    bool retryConfirmed = 21;
+    uint32 retryTime = 22;
 }
