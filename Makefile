@@ -47,6 +47,7 @@ statics:
 	@go generate cmd/loraserver/main.go
 
 requirements:
+	go mod download
 	@go get -u github.com/kisielk/errcheck
 	@go get -u github.com/golang/lint/golint
 	@go get -u github.com/kardianos/govendor
@@ -60,7 +61,6 @@ requirements:
 	@go get -u github.com/jteeuwen/go-bindata/...
 	@go get -u github.com/golang/dep/cmd/dep
 	@go get -u github.com/goreleaser/goreleaser
-	@dep ensure -v
 
 # shortcuts for development
 
