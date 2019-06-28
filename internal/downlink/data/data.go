@@ -410,7 +410,9 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 
 		// in case of class-b it is already set, we don't want to overwrite it
 		// we want that class-a retry confirmed down if retryConfirmed is true
-		if qi.TimeoutAfter == nil && !ctx.DeviceProfile.RetryConfirmed{
+		if qi.TimeoutAfter == nil && !ctx.DeviceProfile.RetryConfirmed {
+			qi.TimeoutAfter = &timeout
+		} else if ctx.DeviceProfile.RetryConfirmed && qi.HasRetry >= qi.RetryTime {
 			qi.TimeoutAfter = &timeout
 		}
 

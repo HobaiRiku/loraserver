@@ -26,4 +26,4 @@ require (
 	gopkg.in/gorp.v1 v1.7.2 // indirect
 )
 
-replace github.com/brocaar/lorawan => github.com/hobairiku/lorawan v1.0.1-riv-custom
+replace github.com/brocaar/lorawan => github.com/hobairiku/lorawan v0.0.1-riv-custom

@@ -53,8 +53,9 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
             is_pending,
             timeout_after,
 			retry_confirmed,
-			retry_time
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			retry_time,
+			has_retry
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11)
         returning id`,
 		qi.CreatedAt,
 		qi.UpdatedAt,
@@ -68,6 +69,7 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
 		qi.TimeoutAfter,
 		qi.RetryConfirmed,
 		qi.RetryTime,
+		uint32(0),
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -215,8 +217,7 @@ func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (Dev
 	}
 	// this qi will retry and the FCnt must be
 	if qi.RetryConfirmed {
-		qi.HasRetry++
-		qi.FCnt++
+		qi.HasRetry += 1
 	}
 	return qi, nil
 }
