@@ -1,7 +1,7 @@
 # LoRa Server RIV custom
 
 This is a fork project for [RIV](https://www.reachxm.com/) custom edition.    
-All change base in v1.0.1 and are in `v1.0.1-riv-custom` branch
+All change base in v1.0.1 and are in `riv-custom` branch
 
 # LoRa Server
 

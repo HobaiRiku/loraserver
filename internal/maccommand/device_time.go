@@ -1,6 +1,7 @@
 package maccommand
 
 import (
+	"github.com/brocaar/loraserver/internal/gps"
 	"time"
 
 	"github.com/pkg/errors"
@@ -17,9 +18,13 @@ func handleDeviceTimeReq(ds *storage.DeviceSession, rxPacket models.RXPacket) ([
 	}
 
 	var timeSinceGPSEpoch time.Duration
+	var timeField time.Time
+
 	for _, rxInfo := range rxPacket.RXInfoSet {
 		if rxInfo.TimeSinceGPSEpoch != nil {
 			timeSinceGPSEpoch = time.Duration(*rxInfo.TimeSinceGPSEpoch)
+		} else if rxInfo.Time != nil {
+			timeField = *rxInfo.Time
 		}
 	}
 
@@ -27,6 +32,15 @@ func handleDeviceTimeReq(ds *storage.DeviceSession, rxPacket models.RXPacket) ([
 		"dev_eui": ds.DevEUI,
 	}).Info("device_time_req received")
 
+	// fallback on time field when time since GPS epoch is not available
+	if timeSinceGPSEpoch == 0 {
+		// fallback on current server time when time field is not available
+		if timeField.IsZero() {
+			timeField = time.Now()
+		}
+
+		timeSinceGPSEpoch = gps.Time(timeField).TimeSinceGPSEpoch()
+	}
 	return []storage.MACCommandBlock{
 		{
 			CID: lorawan.DeviceTimeAns,

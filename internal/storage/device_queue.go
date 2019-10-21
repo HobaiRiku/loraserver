@@ -55,7 +55,7 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
 			retry_confirmed,
 			retry_time,
 			has_retry
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11)
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11,$12,$13)
         returning id`,
 		qi.CreatedAt,
 		qi.UpdatedAt,
