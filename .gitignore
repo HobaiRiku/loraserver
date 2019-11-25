@@ -21,3 +21,4 @@ dist/
 build/
 internal/migrations/
 docs/public/
+!migrations/**/*.sql
